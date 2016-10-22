@@ -15,19 +15,9 @@ function Receptor:initialize(x, y, width, height, rotation, red, green, blue)
   self.charge_ratio = 0
 
   self.body = love.physics.newBody(game.world, x, y)
-  local shape = love.physics.newPolygonShape(-width / 2, -height / 2,
-                                             width / 2, -height / 2,
-                                             width / 2,  height / 2,
-                                            -width / 2,  height / 2)
+  local shape = love.physics.newCircleShape(self.width / 2)
   self.fixture = love.physics.newFixture(self.body, shape)
   self.fixture:setUserData(self)
-
-  self.mesh = g.newMesh({
-    {-width / 2, -height / 2, 0, 0, 0, 0, 0},
-    { width / 2, -height / 2, 1, 0, 0, 0, 0},
-    { width / 2,  height / 2, 1, 1, self.r, self.g, self.b},
-    {-width / 2,  height / 2, 0, 1, self.r, self.g, self.b},
-  })
 
   self.sprites = require('images.receptor')
 
@@ -56,8 +46,14 @@ function Receptor:draw()
   g.pop()
 end
 
+local function equalish(a, b)
+  return math.ceil(a) == math.ceil(b)
+end
+
 function Receptor:charge(dt, r, g, b)
-  self.charge_ratio = math.min(self.charge_ratio + dt / 5, 1)
+  if equalish(r, self.r) and equalish(g, self.g) and equalish(b, self.b) then
+    self.charge_ratio = math.min(self.charge_ratio + dt / 5, 1)
+  end
   -- local color = self.charge_ratio * 255
   -- self.mesh:setVertexAttribute(1, 3, color, color, color)
   -- self.mesh:setVertexAttribute(2, 3, color, color, color)

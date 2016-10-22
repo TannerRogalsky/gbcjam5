@@ -50,6 +50,7 @@ function Player2:enteredState()
   self.lights = {}
   for i,light_data in ipairs(level.lights) do
     self.lights[i] = LightSource:new(unpack(light_data))
+    self.lights[i].name = "Player " .. i
   end
 
   self.receptors = {}
@@ -71,6 +72,7 @@ function Player2:enteredState()
   self.rays = {}
 
   self.mousedown = nil
+  self.game_over = false
 
   g.setLineWidth(6)
   g.setFont(self.preloaded_fonts["04b03_16"])
@@ -78,7 +80,7 @@ end
 
 local t = 0
 function Player2:update(dt)
-  if love.keyboard.isDown('p') then
+  if self.game_over then
     return
   end
 
@@ -95,8 +97,9 @@ function Player2:update(dt)
   end
 
   self.rays = {}
-  local light = self.lights[self.player_index]
-  for i,light in ipairs(self.lights) do
+  for t=1,self.num_players do
+    local i = ((t + self.player_index - 1) + 1) % self.num_players + 1
+    local light = self.lights[i]
     local x1 = light.x + math.cos(light.rotation) * light.radius / 2
     local y1 = light.y + math.sin(light.rotation) * light.radius / 2
     local x2 = x1 + math.cos(light.rotation) * 1000
@@ -110,7 +113,7 @@ function Player2:update(dt)
   end
 
   if allReceptorsFull(self.receptors) then
-    self:gotoState('Over')
+    self.game_over = true
   end
 end
 
@@ -224,20 +227,37 @@ function Player2:draw()
     g.pop()
   end
 
+  if self.game_over then
+    g.push('all')
+    g.setColor(0, 0, 0, 100)
+    g.rectangle('fill', 0, 0, g.getWidth(), g.getHeight())
+    g.setColor(255, 255, 255)
+    g.setFont(game.preloaded_fonts['04b03_24'])
+    g.printf("Player " .. self.player_index .. " Wins!", 0, g.getHeight() / 3, g.getWidth(), 'center')
+    g.pop()
+  end
+
   self.camera:unset()
 end
 
 function Player2:mousepressed(x, y, button, isTouch)
-  if button == 1 then
+  if button == 1 and not self.game_over then
     self.mousedown = {
       x = x,
       y = y
     }
+  elseif button == 2 and self.mousedown then
+    self.mousedown = nil
   end
 end
 
 function Player2:mousereleased(x, y, button, isTouch)
-  if button == 1 then
+  if self.game_over then
+    self:gotoState("Menu")
+    return
+  end
+
+  if button == 1 and self.mousedown then
     local dx = x - self.mousedown.x
     local dy = y - self.mousedown.y
 
@@ -271,12 +291,14 @@ function Player2:mousereleased(x, y, button, isTouch)
 end
 
 function Player2:keypressed(key, scancode, isrepeat)
-  if key == 'r' then
-    self:gotoState('Player2')
-  end
 end
 
 function Player2:keyreleased(key, scancode)
+  if self.game_over then
+    self:gotoState('Menu')
+  elseif key == 'r' then
+    self:gotoState('Player2')
+  end
 end
 
 function Player2:gamepadpressed(joystick, button)

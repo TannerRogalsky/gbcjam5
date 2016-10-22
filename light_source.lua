@@ -22,7 +22,7 @@ function LightSource:draw()
   local w, h = self.image:getDimensions()
   g.draw(self.image, self.x, self.y, self.rotation + math.pi / 2, 1, 1, w / 2, h / 2)
 
-  -- g.pop()
+  g.print(self.name, self.x - 25, self.y + math.sin(self.rotation + math.pi / 2) * self.radius)
 end
 
 return LightSource
