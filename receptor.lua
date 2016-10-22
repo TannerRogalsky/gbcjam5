@@ -29,6 +29,8 @@ function Receptor:initialize(x, y, width, height, rotation, red, green, blue)
     {-width / 2,  height / 2, 0, 1, self.r, self.g, self.b},
   })
 
+  self.sprites = require('images.receptor')
+
   self.body:setAngle(rotation)
 end
 
@@ -37,7 +39,16 @@ function Receptor:draw()
   g.translate(self.x, self.y)
   g.rotate(self.rotation)
 
-  g.draw(self.mesh)
+  -- g.draw(self.mesh)
+  g.setColor(self.r, self.g, self.b)
+  g.draw(self.sprites.texture, self.sprites.quads['receptor-base'], 0, 0, 0, 1, 1, self.width / 2, self.height / 2)
+  g.setColor(255, 255, 255)
+  g.draw(self.sprites.texture, self.sprites.quads['receptor-sprite'], 0, 0, 0, 1, 1, self.width / 2, self.height / 2)
+
+  local frame_index = math.ceil(self.charge_ratio * 5)
+  if frame_index > 0 then
+    g.draw(self.sprites.texture, self.sprites.quads['receptor-progress-' .. frame_index], 0, 0, 0, 1, 1, self.width / 2, self.height / 2)
+  end
 
   -- g.setColor(self.r, self.g, self.b, self.charge_ratio * 255)
   -- g.ellipse('fill', 0, 0, self.width, self.height)
@@ -47,9 +58,9 @@ end
 
 function Receptor:charge(dt, r, g, b)
   self.charge_ratio = math.min(self.charge_ratio + dt / 5, 1)
-  local color = self.charge_ratio * 255
-  self.mesh:setVertexAttribute(1, 3, color, color, color)
-  self.mesh:setVertexAttribute(2, 3, color, color, color)
+  -- local color = self.charge_ratio * 255
+  -- self.mesh:setVertexAttribute(1, 3, color, color, color)
+  -- self.mesh:setVertexAttribute(2, 3, color, color, color)
 end
 
 function Receptor:setRotation(phi)

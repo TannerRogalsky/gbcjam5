@@ -18,11 +18,12 @@ function Mirror:initialize(x, y, width, height, rotation)
   self.fixture:setUserData(self)
 
   self.mesh = g.newMesh({
-    {-width / 2, -height / 2, 0, 0, 50, 50, 50},
-    { width / 2, -height / 2, 1, 0, 50, 50, 50},
-    { width / 2,  height / 2, 1, 1, 255, 255, 255},
-    {-width / 2,  height / 2, 0, 1, 255, 255, 255},
+    {-width / 2, -height / 2, 1, 1},-- 50, 50, 50},
+    { width / 2, -height / 2, 0, 1},-- 50, 50, 50},
+    { width / 2,  height / 2, 0, 0},-- 255, 255, 255},
+    {-width / 2,  height / 2, 1, 0},-- 255, 255, 255},
   })
+  self.mesh:setTexture(game.preloaded_images['mirror.png'])
 
   self.body:setAngle(rotation)
 end

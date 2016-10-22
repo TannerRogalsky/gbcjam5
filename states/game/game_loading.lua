@@ -14,6 +14,8 @@ function Loading:enteredState()
   self.preloaded_fonts = {}
   self.preloaded_levels = {}
 
+  g.setDefaultFilter('nearest', 'nearest')
+
   -- puts loaded images into the preloaded_images hash with they key being the file name
   for index, image in ipairs(love.filesystem.getDirectoryItems('images')) do
     if image:match('(.*).png$') ~= nil or image:match('(.*).gif$') ~= nil or image:match('(.*).jpg$') ~= nil then
@@ -45,7 +47,7 @@ function Loading:enteredState()
     -- loader finished callback
     -- initialize game stuff here
 
-    self:gotoState("Main")
+    self:gotoState("Player2")
   end)
 
   local hexFormatStringPart = '%X '
