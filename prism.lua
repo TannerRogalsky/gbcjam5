@@ -1,5 +1,7 @@
 local Prism = class('Prism', Base):include(Stateful)
 
+local hsl = require('lib.hsl')
+
 function Prism:initialize(x, y, radius, rotation)
   Base.initialize(self)
 
@@ -64,7 +66,8 @@ function Prism:getExitRays(ix, iy, iPhi)
     exitRays[i] = {
       x = self.x + x,
       y = self.y + y,
-      angle = angle
+      angle = angle,
+      color = {hsl((interval * i - math.pi / 3) / (math.pi * 2), 1, 0.5)}
     }
   end
   return exitRays

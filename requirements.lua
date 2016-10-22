@@ -35,6 +35,7 @@ Game = require("game")
 LightSource = require('light_source')
 Mirror = require('mirror')
 Prism = require('prism')
+Receptor = require('receptor')
 
 Direction = require("direction")
 

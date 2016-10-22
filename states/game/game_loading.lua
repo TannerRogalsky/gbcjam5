@@ -12,6 +12,7 @@ function Loading:enteredState()
   self.loader = require 'lib/love-loader/love-loader'
   self.preloaded_images = {}
   self.preloaded_fonts = {}
+  self.preloaded_levels = {}
 
   -- puts loaded images into the preloaded_images hash with they key being the file name
   for index, image in ipairs(love.filesystem.getDirectoryItems('images')) do
@@ -22,12 +23,19 @@ function Loading:enteredState()
 
   local sizes = {12, 14, 16, 20, 24}
   for index, filename in ipairs(love.filesystem.getDirectoryItems('fonts')) do
-    font = filename:match('(.*).ttf$') or filename:match('(.*).TTF$')
+    local font = filename:match('(.*).ttf$') or filename:match('(.*).TTF$')
     if font then
       for _,size in ipairs(sizes) do
         local key = font .. "_" .. tostring(size)
         self.preloaded_fonts[key] = g.newFont('fonts/' .. filename, size)
       end
+    end
+  end
+
+  for index, filename in ipairs(love.filesystem.getDirectoryItems('levels')) do
+    local level = filename:match('(.*).lua$')
+    if level then
+      self.preloaded_levels[level] = require('levels.' .. level)
     end
   end
 

@@ -18,17 +18,25 @@ function Main:enteredState()
 
   self.world = love.physics.newWorld(0, 0, true)
 
-  lightSource = LightSource:new(100, 100, 0)
+  local level = self.preloaded_levels.level001
+  self.light = LightSource:new(unpack(level.source))
+  self.receptor = Receptor:new(unpack(level.receptor))
 
   self.mirrors = {}
-  for i=1,10 do
-    local w, h = g.getDimensions()
-    self.mirrors[i] = Mirror:new(love.math.random(w), love.math.random(h), 75, 10, love.math.random(math.pi * 2))
+  for i,mirror_data in ipairs(level.mirrors) do
+    self.mirrors[i] = Mirror:new(unpack(mirror_data))
   end
-  prism = Prism:new(400, 100, 50, 0)
+
+  self.prisms = {}
+  for i,prism_data in ipairs(level.prisms) do
+    self.prisms[i] = Prism:new(unpack(prism_data))
+  end
 
   self.rays = {}
 
+  self.mousedown = nil
+
+  g.setLineWidth(6)
   g.setFont(self.preloaded_fonts["04b03_16"])
 end
 
@@ -42,22 +50,24 @@ function Main:update(dt)
   -- lightSource.rotation = math.pow(math.sin((t / 4) * math.pi / 2), 2)
   -- mirror:setRotation(t)
   for i,mirror in ipairs(self.mirrors) do
-    mirror:setRotation(mirror.rotation + dt)
+    -- mirror:setRotation(mirror.rotation + dt)
   end
-  prism:setRotation(t / 10)
-  prism.refracted = false
+
+  for i,prism in ipairs(self.prisms) do
+    prism.refracted = false
+  end
 
   self.rays = {}
   do
-    local x1 = lightSource.x + math.cos(lightSource.rotation) * lightSource.radius / 2
-    local y1 = lightSource.y + math.sin(lightSource.rotation) * lightSource.radius / 2
-    local x2 = x1 + math.cos(lightSource.rotation) * 1000
-    local y2 = y1 + math.sin(lightSource.rotation) * 1000
-    self:rayCast(x1, y1, x2, y2)
+    local x1 = self.light.x + math.cos(self.light.rotation) * self.light.radius / 2
+    local y1 = self.light.y + math.sin(self.light.rotation) * self.light.radius / 2
+    local x2 = x1 + math.cos(self.light.rotation) * 1000
+    local y2 = y1 + math.sin(self.light.rotation) * 1000
+    self:rayCast(dt, x1, y1, x2, y2, 255, 255, 255)
   end
 end
 
-function Main:rayCast(x1, y1, x2, y2)
+function Main:rayCast(dt, x1, y1, x2, y2, r, g, b)
   if #self.rays > 1000 then -- PANIC
     return 0
   end
@@ -67,7 +77,8 @@ function Main:rayCast(x1, y1, x2, y2)
   if #self.hits == 0 then
     table.insert(self.rays, {
       x1 = x1, y1 = y1,
-      x2 = x2, y2 = y2
+      x2 = x2, y2 = y2,
+      r = r, g = g, b = b
     })
   else
     local closest_hit = self.hits[1]
@@ -79,7 +90,8 @@ function Main:rayCast(x1, y1, x2, y2)
 
     table.insert(self.rays, {
       x1 = x1, y1 = y1,
-      x2 = closest_hit.x, y2 = closest_hit.y
+      x2 = closest_hit.x, y2 = closest_hit.y,
+      r = r, g = g, b = b
     })
     local dx = x1-x2
     local dy = y1-y2
@@ -92,10 +104,13 @@ function Main:rayCast(x1, y1, x2, y2)
     end
 
     local object = closest_hit.object
+    local xn = closest_hit.xn
+    local yn = closest_hit.yn
     if object:isInstanceOf(Mirror) then
-      local x3 = closest_hit.x + closest_hit.xn * 1000
-      local y3 = closest_hit.y + closest_hit.yn * 1000
-      self:rayCast(closest_hit.x, closest_hit.y, x3, y3)
+      local s = 2 * (dx * xn + dy * yn) / (xn * xn + yn * yn)
+      local x3 = closest_hit.x + (s * xn - dx) * 1000
+      local y3 = closest_hit.y + (s * yn - dy) * 1000
+      self:rayCast(dt, closest_hit.x, closest_hit.y, x3, y3, r, g, b)
     elseif object:isInstanceOf(Prism) then
       local phi = math.atan2(closest_hit.xn, closest_hit.yn)
       local exitRays = object:getExitRays(closest_hit.x, closest_hit.y, phi)
@@ -104,10 +119,10 @@ function Main:rayCast(x1, y1, x2, y2)
         local y1 = ray.y
         local x2 = ray.x + math.cos(ray.angle) * 1000
         local y2 = ray.y + math.sin(ray.angle) * 1000
-        self:rayCast(x1, y1, x2, y2)
-        -- table.insert(game.rays, {startX = x1, startY = y1, endX = x2, endY = y2})
-        -- game.world:rayCast(x1, y1, x2, y2, worldRayCastCallback)
+        self:rayCast(dt, x1, y1, x2, y2, ray.color[1], ray.color[2], ray.color[3])
       end
+    elseif object:isInstanceOf(Receptor) then
+      object:charge(dt, r, g, b)
     end
   end
 end
@@ -115,33 +130,62 @@ end
 function Main:draw()
   self.camera:set()
 
-  lightSource:draw()
+  self.light:draw()
 
   for i,mirror in ipairs(self.mirrors) do
     mirror:draw()
   end
 
-  prism:draw()
-
-  for i,ray in ipairs(self.rays) do
-    g.line(ray.x1, ray.y1, ray.x2, ray.y2)
+  for i,prism in ipairs(self.prisms) do
+    prism:draw()
   end
 
-  -- do
-  --   local x1 = lightSource.x + math.cos(lightSource.rotation) * lightSource.radius / 2
-  --   local y1 = lightSource.y + math.sin(lightSource.rotation) * lightSource.radius / 2
-  --   local x2 = x1 + math.cos(lightSource.rotation) * 1000
-  --   local y2 = y1 + math.sin(lightSource.rotation) * 1000
-  --   g.line(x1, y1, x2, y2)
-  -- end
+  self.receptor:draw()
+
+  g.push('all')
+  for i,ray in ipairs(self.rays) do
+    g.setColor(ray.r, ray.g, ray.b)
+    g.line(ray.x1, ray.y1, ray.x2, ray.y2)
+  end
+  g.pop()
+
+  if self.mousedown then
+    local x, y = love.mouse.getPosition()
+    local dx = x - self.mousedown.x
+    local dy = y - self.mousedown.y
+    local cx = (self.mousedown.x + x) / 2
+    local cy = (self.mousedown.y + y) / 2
+    local phi = math.atan2(dy, dx) + math.pi / 2
+    local len = math.sqrt(dx * dx + dy * dy)
+
+    g.push('all')
+    g.translate(self.mousedown.x, self.mousedown.y)
+    g.rotate(phi)
+    g.rectangle('fill', -len / 2, -25 / 2, len, 25)
+    g.pop()
+  end
 
   self.camera:unset()
 end
 
 function Main:mousepressed(x, y, button, isTouch)
+  self.mousedown = {
+    x = x,
+    y = y
+  }
 end
 
 function Main:mousereleased(x, y, button, isTouch)
+  local dx = x - self.mousedown.x
+  local dy = y - self.mousedown.y
+  local cx = (self.mousedown.x + x) / 2
+  local cy = (self.mousedown.y + y) / 2
+  local phi = math.atan2(dy, dx) + math.pi / 2
+  local len = math.sqrt(dx * dx + dy * dy)
+
+  local new_mirror = Mirror:new(self.mousedown.x, self.mousedown.y, len, 25, phi)
+  table.insert(self.mirrors, new_mirror)
+  self.mousedown = nil
 end
 
 function Main:keypressed(key, scancode, isrepeat)
