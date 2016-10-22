@@ -32,6 +32,9 @@ Boid = require("lib.boid")
 
 Base = require("base")
 Game = require("game")
+LightSource = require('light_source')
+Mirror = require('mirror')
+Prism = require('prism')
 
 Direction = require("direction")
 
