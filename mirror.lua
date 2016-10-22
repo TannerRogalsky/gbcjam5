@@ -19,9 +19,9 @@ function Mirror:initialize(x, y, width, height, rotation)
 
   self.mesh = g.newMesh({
     {-width / 2, -height / 2, 0, 0, 50, 50, 50},
-    { width / 2, -height / 2, 0, 0, 50, 50, 50},
-    { width / 2,  height / 2, 0, 0, 255, 255, 255},
-    {-width / 2,  height / 2, 0, 0, 255, 255, 255},
+    { width / 2, -height / 2, 1, 0, 50, 50, 50},
+    { width / 2,  height / 2, 1, 1, 255, 255, 255},
+    {-width / 2,  height / 2, 0, 1, 255, 255, 255},
   })
 
   self.body:setAngle(rotation)
@@ -49,6 +49,10 @@ end
 function Mirror:setRotation(phi)
   self.rotation = phi
   self.body:setAngle(phi)
+end
+
+function Mirror:destroy()
+  self.body:destroy()
 end
 
 return Mirror

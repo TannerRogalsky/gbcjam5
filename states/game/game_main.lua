@@ -12,20 +12,34 @@ function worldRayCastCallback(fixture, x, y, xn, yn, fraction)
   return 1
 end
 
+local function allReceptorsFull(receptors)
+  for i,receptor in ipairs(receptors) do
+    if receptor.charge_ratio ~= 1 then
+      return false
+    end
+  end
+  return true
+end
+
 function Main:enteredState()
   local Camera = require("lib/camera")
   self.camera = Camera:new()
 
   self.world = love.physics.newWorld(0, 0, true)
 
-  local level = self.preloaded_levels.level001
+  local level = self.preloaded_levels.level002
   self.light = LightSource:new(unpack(level.source))
-  self.receptor = Receptor:new(unpack(level.receptor))
+
+  self.receptors = {}
+  for i,receptor_data in ipairs(level.receptors) do
+    self.receptors[i] = Receptor:new(unpack(receptor_data))
+  end
 
   self.mirrors = {}
   for i,mirror_data in ipairs(level.mirrors) do
     self.mirrors[i] = Mirror:new(unpack(mirror_data))
   end
+  self.player_mirrors = {}
 
   self.prisms = {}
   for i,prism_data in ipairs(level.prisms) do
@@ -54,6 +68,7 @@ function Main:update(dt)
   end
 
   for i,prism in ipairs(self.prisms) do
+    -- prism:setRotation(prism.rotation + dt / 4)
     prism.refracted = false
   end
 
@@ -64,6 +79,10 @@ function Main:update(dt)
     local x2 = x1 + math.cos(self.light.rotation) * 1000
     local y2 = y1 + math.sin(self.light.rotation) * 1000
     self:rayCast(dt, x1, y1, x2, y2, 255, 255, 255)
+  end
+
+  if allReceptorsFull(self.receptors) then
+    self:gotoState('Over')
   end
 end
 
@@ -98,10 +117,10 @@ function Main:rayCast(dt, x1, y1, x2, y2, r, g, b)
     local dist = math.sqrt(dx * dx + dy * dy)
     local ixn, iyn = dx / dist, dy / dist
 
-    if closest_hit.xn == ixn and closest_hit.yn == iyn then
-      -- just going back where we came
-      return 0
-    end
+    -- if closest_hit.xn == ixn and closest_hit.yn == iyn then -- FIXME: this examines the normals
+    --   -- just going back where we came
+    --   return 0
+    -- end
 
     local object = closest_hit.object
     local xn = closest_hit.xn
@@ -136,11 +155,17 @@ function Main:draw()
     mirror:draw()
   end
 
+  for i,mirror in ipairs(self.player_mirrors) do
+    mirror:draw()
+  end
+
   for i,prism in ipairs(self.prisms) do
     prism:draw()
   end
 
-  self.receptor:draw()
+  for i,receptor in ipairs(self.receptors) do
+    receptor:draw()
+  end
 
   g.push('all')
   for i,ray in ipairs(self.rays) do
@@ -169,26 +194,51 @@ function Main:draw()
 end
 
 function Main:mousepressed(x, y, button, isTouch)
-  self.mousedown = {
-    x = x,
-    y = y
-  }
+  if button == 1 then
+    self.mousedown = {
+      x = x,
+      y = y
+    }
+  end
 end
 
 function Main:mousereleased(x, y, button, isTouch)
-  local dx = x - self.mousedown.x
-  local dy = y - self.mousedown.y
-  local cx = (self.mousedown.x + x) / 2
-  local cy = (self.mousedown.y + y) / 2
-  local phi = math.atan2(dy, dx) + math.pi / 2
-  local len = math.sqrt(dx * dx + dy * dy)
+  if button == 1 then
+    local dx = x - self.mousedown.x
+    local dy = y - self.mousedown.y
 
-  local new_mirror = Mirror:new(self.mousedown.x, self.mousedown.y, len, 25, phi)
-  table.insert(self.mirrors, new_mirror)
-  self.mousedown = nil
+    if math.abs(dx) > 0 and math.abs(dy) > 0 then
+      local cx = (self.mousedown.x + x) / 2
+      local cy = (self.mousedown.y + y) / 2
+      local phi = math.atan2(dy, dx) + math.pi / 2
+      local len = math.sqrt(dx * dx + dy * dy)
+
+      local new_mirror = Mirror:new(self.mousedown.x, self.mousedown.y, len, 25, phi)
+      table.insert(self.player_mirrors, new_mirror)
+    end
+    self.mousedown = nil
+  elseif button == 2 then
+    local index_to_remove = 0
+    for i,mirror in ipairs(self.player_mirrors) do
+      local body = mirror.body
+      local shape = mirror.fixture:getShape()
+      if shape:testPoint(body:getX(), body:getY(), body:getAngle(), x, y) then
+        index_to_remove = i
+      end
+    end
+
+    if index_to_remove > 0 then
+      local mirror = self.player_mirrors[index_to_remove]
+      mirror:destroy()
+      table.remove(self.player_mirrors, index_to_remove)
+    end
+  end
 end
 
 function Main:keypressed(key, scancode, isrepeat)
+  if key == 'r' then
+    self:gotoState('Main')
+  end
 end
 
 function Main:keyreleased(key, scancode)
@@ -205,6 +255,7 @@ end
 
 function Main:exitedState()
   self.camera = nil
+  self.world:destroy()
 end
 
 return Main

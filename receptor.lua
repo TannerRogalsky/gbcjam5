@@ -24,9 +24,9 @@ function Receptor:initialize(x, y, width, height, rotation, red, green, blue)
 
   self.mesh = g.newMesh({
     {-width / 2, -height / 2, 0, 0, 0, 0, 0},
-    { width / 2, -height / 2, 0, 0, 0, 0, 0},
-    { width / 2,  height / 2, 0, 0, self.r, self.g, self.b},
-    {-width / 2,  height / 2, 0, 0, self.r, self.g, self.b},
+    { width / 2, -height / 2, 1, 0, 0, 0, 0},
+    { width / 2,  height / 2, 1, 1, self.r, self.g, self.b},
+    {-width / 2,  height / 2, 0, 1, self.r, self.g, self.b},
   })
 
   self.body:setAngle(rotation)
@@ -39,11 +39,14 @@ function Receptor:draw()
 
   g.draw(self.mesh)
 
+  -- g.setColor(self.r, self.g, self.b, self.charge_ratio * 255)
+  -- g.ellipse('fill', 0, 0, self.width, self.height)
+
   g.pop()
 end
 
 function Receptor:charge(dt, r, g, b)
-  self.charge_ratio = math.min(self.charge_ratio + dt / 10, 1)
+  self.charge_ratio = math.min(self.charge_ratio + dt / 5, 1)
   local color = self.charge_ratio * 255
   self.mesh:setVertexAttribute(1, 3, color, color, color)
   self.mesh:setVertexAttribute(2, 3, color, color, color)
