@@ -222,7 +222,7 @@ function Player2:draw()
     local cx = (self.mousedown.x + x) / 2
     local cy = (self.mousedown.y + y) / 2
     local phi = math.atan2(dy, dx) + math.pi / 2
-    local len = math.sqrt(dx * dx + dy * dy)
+    local len = math.min(100, math.sqrt(dx * dx + dy * dy))
 
     g.push('all')
     g.translate(self.mousedown.x, self.mousedown.y)
@@ -269,7 +269,7 @@ function Player2:mousereleased(x, y, button, isTouch)
       local cx = (self.mousedown.x + x) / 2
       local cy = (self.mousedown.y + y) / 2
       local phi = math.atan2(dy, dx) + math.pi / 2
-      local len = math.sqrt(dx * dx + dy * dy)
+      local len = math.min(100, math.sqrt(dx * dx + dy * dy))
 
       local new_mirror = Mirror:new(self.mousedown.x, self.mousedown.y, len, 25, phi)
       table.insert(self.player_mirrors, new_mirror)
