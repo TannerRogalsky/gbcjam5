@@ -96,6 +96,10 @@ function Player2:update(dt)
     prism.refracted = false
   end
 
+  for i,receptor in ipairs(self.receptors) do
+    receptor.charge_ratio = 0
+  end
+
   self.rays = {}
   for t=1,self.num_players do
     local i = ((t + self.player_index - 1) + 1) % self.num_players + 1
