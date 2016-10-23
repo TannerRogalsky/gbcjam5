@@ -52,7 +52,7 @@ end
 
 function Receptor:charge(dt, r, g, b)
   if equalish(r, self.r) and equalish(g, self.g) and equalish(b, self.b) then
-    self.charge_ratio = math.min(self.charge_ratio + dt / 5, 1)
+    self.charge_ratio = math.min(self.charge_ratio + dt, 1)
   end
   -- local color = self.charge_ratio * 255
   -- self.mesh:setVertexAttribute(1, 3, color, color, color)
